@@ -181,7 +181,7 @@ export const getUserDetails = async (
   try {
     const { uid } = req.params;
 
-    const userRecord = await auth.getUser(uid);
+    const userRecord = await auth.getUser(uid as string);
     const userDoc = await firestoreRepository.getDocumentById("users", uid);
 
     const response = {
@@ -230,10 +230,10 @@ export const disableUser = async (
     const adminUid = res.locals.uid;
 
     // Disable user in Firebase Auth
-    await auth.updateUser(uid, { disabled: true });
+    await auth.updateUser(uid as string, { disabled: true });
 
     // Update Firestore
-    await firestoreRepository.updateDocument("users", uid, {
+    await firestoreRepository.updateDocument("users", uid as string, {
       disabled: true,
       disabledAt: new Date(),
       updatedAt: new Date(),
@@ -275,10 +275,10 @@ export const enableUser = async (
     const adminUid = res.locals.uid;
 
     // Enable user in Firebase Auth
-    await auth.updateUser(uid, { disabled: false });
+    await auth.updateUser(uid as string, { disabled: false });
 
     // Update Firestore
-    await firestoreRepository.updateDocument("users", uid, {
+    await firestoreRepository.updateDocument("users", uid as string, {
       disabled: false,
       updatedAt: new Date(),
     });
