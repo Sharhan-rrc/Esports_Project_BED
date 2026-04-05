@@ -69,7 +69,7 @@ export const getPlayerById = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    const player = await playerService.getPlayerById(id);
+    const player = await playerService.getPlayerById(id as string);
 
     res.status(HTTP_STATUS.OK).json(
       successResponse(player, "Player retrieved successfully")
@@ -93,7 +93,7 @@ export const updatePlayer = async (
     const ipAddress = res.locals.clientIP;
 
     const player = await playerService.updatePlayer(
-      id,
+      id as string,
       req.body,
       userId,
       ipAddress
@@ -120,7 +120,7 @@ export const deletePlayer = async (
     const userId = res.locals.uid;
     const ipAddress = res.locals.clientIP;
 
-    await playerService.softDeletePlayer(id, userId, ipAddress);
+    await playerService.softDeletePlayer(id as string, userId, ipAddress);
 
     res.status(HTTP_STATUS.NO_CONTENT).send();
   } catch (error: unknown) {
@@ -144,7 +144,7 @@ export const blacklistPlayer = async (
     const ipAddress = res.locals.clientIP;
 
     const player = await playerService.blacklistPlayer(
-      id,
+      id as string,
       reason,
       userId,
       ipAddress
@@ -172,7 +172,7 @@ export const unblacklistPlayer = async (
     const userId = res.locals.uid;
     const ipAddress = res.locals.clientIP;
 
-    const player = await playerService.unblacklistPlayer(id, userId, ipAddress);
+    const player = await playerService.unblacklistPlayer(id as string, userId, ipAddress);
 
     res.status(HTTP_STATUS.OK).json(
       successResponse(player, "Player unblacklisted successfully")
@@ -197,7 +197,7 @@ export const updatePlayerStats = async (
     const ipAddress = res.locals.clientIP;
 
     const rating = await playerService.updatePlayerStats(
-      id,
+      id as string,
       req.body,
       userId,
       ipAddress
@@ -221,7 +221,7 @@ export const getPlayerRating = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    const player = await playerService.getPlayerById(id);
+    const player = await playerService.getPlayerById(id as string);
 
     res.status(HTTP_STATUS.OK).json(
       successResponse(player.rating, "Player rating retrieved successfully")
