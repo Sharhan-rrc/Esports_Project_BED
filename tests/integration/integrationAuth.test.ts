@@ -53,7 +53,7 @@ describe("Authentication and Authorization Integration Tests", () => {
       };
 
       // Act
-      const response = await request(app)
+      await request(app)
         .post("/api/v1/admin/bootstrap")
         .send(bootStrapData);
 

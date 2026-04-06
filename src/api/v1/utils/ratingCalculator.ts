@@ -3,7 +3,7 @@
  * Path: src/api/v1/utils/ratingCalculator.ts
  */
 
-import { PlayerRating } from "../models/playerModel";
+
 
 interface RatingComponents {
   winRate: number;

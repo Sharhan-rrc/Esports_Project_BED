@@ -3,7 +3,7 @@
  * Path: src/api/v1/validations/playerSchema.ts
  */
 
-import Joi, { ObjectSchema } from "joi";
+import Joi from "joi";
 
 /**
  * @openapi
