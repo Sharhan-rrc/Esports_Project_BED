@@ -18,6 +18,7 @@ import swaggerUi from "swagger-ui-express";
 
 // Internal imports
 import { getCorsOptions } from "./config/corsConfig";
+import { generateSwaggerSpec } from "./config/swaggerOptions";
 import {
   accessLogger,
   errorLogger,
@@ -55,8 +56,8 @@ app.use(captureClientIP);
 
 // ============ API DOCUMENTATION ============
 
-// Swagger UI setup (docs will be added in future)
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup({}));
+const swaggerSpec = generateSwaggerSpec();
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Health check endpoint (no auth required)
 app.get("/health", (req, res) => {
