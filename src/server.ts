@@ -14,6 +14,7 @@ const server = app.listen(PORT, () => {
   console.log(`Environment: ${NODE_ENV}`);
   console.log(`API Docs: http://localhost:${PORT}/api-docs`);
   console.log(`Health Check: http://localhost:${PORT}/health`);
+  console.log(`Health Check (v1): http://localhost:${PORT}/api/v1/health`);
   console.log("\nAvailable Routes:");
   console.log("POST   /api/v1/admin/bootstrap");
   console.log("POST   /api/v1/admin/assign-role");

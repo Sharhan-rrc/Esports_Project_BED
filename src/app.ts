@@ -33,6 +33,7 @@ import adminRoutes from "./api/v1/routes/adminRoutes";
 import authRoutes from "./api/v1/routes/authRoutes";
 
 const app: Express = express();
+const appStartedAt = new Date().toISOString();
 
 // ============ MIDDLEWARE SETUP ============
 
@@ -60,13 +61,20 @@ const swaggerSpec = generateSwaggerSpec();
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Health check endpoint (no auth required)
-app.get("/health", (req, res) => {
+const healthHandler = (req: express.Request, res: express.Response): void => {
   res.status(200).json({
     status: "healthy",
+    project: "esports-hub-backend",
+    environment: process.env.NODE_ENV || "development",
     timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
+    startedAt: appStartedAt,
+    uptimeSeconds: Math.floor(process.uptime()),
+    apiVersion: "v1",
   });
-});
+};
+
+app.get("/health", healthHandler);
+app.get("/api/v1/health", healthHandler);
 
 // ============ API ROUTES ============
 
