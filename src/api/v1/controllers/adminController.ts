@@ -11,7 +11,6 @@ import { auth } from "../../../config/firebaseConfig";
 import { successResponse } from "../models/responseModel";
 import { HTTP_STATUS } from "../../../constants/httpConstants";
 import {
-  AuthenticationError,
   ServiceError,
 } from "../errors/errors";
 import * as firestoreRepository from "../repositories/firestoreRepository";

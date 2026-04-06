@@ -15,10 +15,6 @@ import {
 } from "../models/playerModel";
 import {
   calculatePlayerRating,
-  calculateWinRate,
-  calculateKDRatio,
-  calculateConsistency,
-  calculateOverallRating,
 } from "../utils/ratingCalculator";
 import {
   logAuditEntry,

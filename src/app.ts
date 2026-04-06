@@ -14,13 +14,10 @@ dotenv.config();
 
 import express, { Express } from "express";
 import cors from "cors";
-import helmet from "helmet";
 import swaggerUi from "swagger-ui-express";
 
 // Internal imports
-import { getHelmetConfig } from "./config/helmetConfig";
 import { getCorsOptions } from "./config/corsConfig";
-import { generateSwaggerSpec } from "./config/swaggerOptions";
 import {
   accessLogger,
   errorLogger,
@@ -32,6 +29,7 @@ import errorHandler from "./api/v1/middleware/errorHandler";
 // Routes
 import playerRoutes from "./api/v1/routes/playerRoutes";
 import adminRoutes from "./api/v1/routes/adminRoutes";
+import authRoutes from "./api/v1/routes/authRoutes";
 
 const app: Express = express();
 
@@ -46,7 +44,6 @@ if (process.env.NODE_ENV === "production") {
 }
 
 // 2. Security middleware
-app.use(getHelmetConfig());
 app.use(cors(getCorsOptions()));
 
 // 3. Body parsing middleware
@@ -58,8 +55,8 @@ app.use(captureClientIP);
 
 // ============ API DOCUMENTATION ============
 
-const swaggerSpec = generateSwaggerSpec();
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// Swagger UI setup (docs will be added in future)
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup({}));
 
 // Health check endpoint (no auth required)
 app.get("/health", (req, res) => {
@@ -74,6 +71,9 @@ app.get("/health", (req, res) => {
 
 // Admin routes (includes bootstrap - unauthenticated)
 app.use("/api/v1/admin", adminRoutes);
+
+// Auth routes (login - unauthenticated, me - authenticated)
+app.use("/api/v1/auth", authRoutes);
 
 // Player routes (all authenticated)
 app.use("/api/v1/players", playerRoutes);

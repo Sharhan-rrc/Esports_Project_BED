@@ -134,7 +134,7 @@ describe("Player Service", () => {
       );
 
       // Act
-      const result = await playerService.blacklistPlayer(
+      await playerService.blacklistPlayer(
         playerId,
         "Rule violation detected",
         "enforcer_uid_123"

@@ -5,11 +5,6 @@
 
 import { db } from "../../../config/firebaseConfig";
 
-interface FieldValuePair {
-  fieldName: string;
-  fieldValue: any;
-}
-
 /**
  * Create a new document in collection
  * @param collectionName - Name of Firestore collection
