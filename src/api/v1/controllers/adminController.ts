@@ -182,7 +182,7 @@ export const getUserDetails = async (
     const { uid } = req.params;
 
     const userRecord = await auth.getUser(uid as string);
-    const userDoc = await firestoreRepository.getDocumentById("users", uid);
+    const userDoc = await firestoreRepository.getDocumentById("users", uid as string);
 
     const response = {
       uid: userRecord.uid,
@@ -243,7 +243,7 @@ export const disableUser = async (
     await logAuditEntry({
       action: "user_disabled",
       userId: adminUid,
-      targetId: uid,
+      targetId: uid as string,
       targetType: "user",
       changes: { disabled: true },
       timestamp: new Date(),
@@ -287,7 +287,7 @@ export const enableUser = async (
     await logAuditEntry({
       action: "user_enabled",
       userId: adminUid,
-      targetId: uid,
+      targetId: uid as string,
       targetType: "user",
       changes: { disabled: false },
       timestamp: new Date(),
