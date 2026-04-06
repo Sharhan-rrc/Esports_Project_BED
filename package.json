@@ -1,4 +1,11 @@
 {
+  "name": "esports-hub-backend",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
   "dependencies": {
     "cors": "^2.8.6",
     "dotenv": "^17.4.0",
@@ -16,6 +23,7 @@
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
     "@types/joi": "^17.2.2",
+
     "@types/morgan": "^1.9.10",
     "@types/node": "^25.5.2",
     "@types/supertest": "^7.2.0",
