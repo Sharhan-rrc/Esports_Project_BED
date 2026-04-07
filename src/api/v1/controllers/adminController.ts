@@ -129,13 +129,29 @@ export const assignRole = async (
     // Set custom claims
     await auth.setCustomUserClaims(uid, { role });
 
-    // Update Firestore document
-    const userData = {
-      role,
-      updatedAt: new Date(),
-    };
+    // Upsert Firestore document so role assignment works even for users
+    // created directly in Firebase Authentication.
+    const existingUserDoc = await firestoreRepository.getDocumentById("users", uid);
+    const now = new Date();
 
-    await firestoreRepository.updateDocument("users", uid, userData);
+    if (!existingUserDoc) {
+      await firestoreRepository.createDocument(
+        "users",
+        {
+          uid,
+          email: userRecord.email,
+          role,
+          createdAt: now,
+          updatedAt: now,
+        },
+        uid
+      );
+    } else {
+      await firestoreRepository.updateDocument("users", uid, {
+        role,
+        updatedAt: now,
+      });
+    }
 
     // Log role assignment
     await logAuditEntry({
