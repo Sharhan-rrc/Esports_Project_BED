@@ -116,6 +116,16 @@ export const playerSchemas = {
           "number.min": "Total deaths cannot be negative",
           "number.base": "Total deaths must be a number",
         }),
+      matchesLast30Days: Joi.number()
+        .integer()
+        .min(0)
+        .max(30)
+        .optional()
+        .messages({
+          "number.min": "Matches last 30 days cannot be negative",
+          "number.max": "Maximum 30 matches per month for consistency calculation",
+          "number.base": "Matches last 30 days must be a number",
+        }),
     }),
   },
 

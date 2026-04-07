@@ -51,6 +51,7 @@ export interface CreatePlayerRequest {
   losses?: number;
   totalKills?: number;
   totalDeaths?: number;
+  matchesLast30Days?: number;
 }
 
 /**

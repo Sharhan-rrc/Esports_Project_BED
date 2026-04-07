@@ -57,6 +57,7 @@ export const createPlayer = async (
     const losses = data.losses || 0;
     const totalKills = data.totalKills || 0;
     const totalDeaths = data.totalDeaths || 0;
+    const matchesLast30Days = data.matchesLast30Days || 0;
     const totalMatches = wins + losses;
     
     // Calculate rating if any stats provided
@@ -65,7 +66,7 @@ export const createPlayer = async (
       wins,
       totalKills,
       totalDeaths,
-      0 // matchesLast30Days starts at 0
+      matchesLast30Days
     );
     
     const playerData = {

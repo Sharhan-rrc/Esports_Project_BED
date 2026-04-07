@@ -219,6 +219,11 @@ router.put(
  *                 type: integer
  *                 minimum: 0
  *                 example: 150
+ *               matchesLast30Days:
+ *                 type: integer
+ *                 minimum: 0
+ *                 maximum: 30
+ *                 example: 22
  *     responses:
  *       201:
  *         description: Player created successfully with calculated rating
