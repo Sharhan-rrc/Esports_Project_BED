@@ -9,12 +9,36 @@
 import request from "supertest";
 import app from "../../src/app";
 import { auth } from "../../src/config/firebaseConfig";
+import * as firestoreRepository from "../../src/api/v1/repositories/firestoreRepository";
+import { logAuditEntry } from "../../src/api/v1/middleware/auditLogger";
 
 jest.mock("../../src/config/firebaseConfig");
+jest.mock("../../src/api/v1/repositories/firestoreRepository");
+jest.mock("../../src/api/v1/middleware/auditLogger", () => ({
+  logAuditEntry: jest.fn(),
+  captureClientIP: (_req: any, _res: any, next: any) => next(),
+}));
 
 describe("Authentication and Authorization Integration Tests", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+
+    (firestoreRepository.queryDocuments as jest.Mock).mockResolvedValue({
+      empty: true,
+    });
+    (firestoreRepository.createDocument as jest.Mock).mockResolvedValue(
+      "doc_123"
+    );
+    (firestoreRepository.updateDocument as jest.Mock).mockResolvedValue(
+      undefined
+    );
+    (logAuditEntry as jest.Mock).mockResolvedValue(undefined);
+
+    (auth.getUser as jest.Mock).mockResolvedValue({
+      uid: "another_user",
+      email: "another@esports.com",
+      customClaims: { role: "officer" },
+    });
   });
 
   describe("POST /api/v1/admin/bootstrap", () => {
