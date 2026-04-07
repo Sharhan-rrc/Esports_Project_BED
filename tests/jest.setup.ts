@@ -31,7 +31,16 @@ afterEach(() => {
   jest.clearAllMocks();
 });
 
+let consoleErrorSpy: jest.SpyInstance;
+
+beforeAll(() => {
+  consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {
+    // Suppress expected error logs from negative-path tests
+  });
+});
+
 // Cleanup after all tests
 afterAll(() => {
+  consoleErrorSpy.mockRestore();
   jest.resetModules();
 });

@@ -12,7 +12,6 @@ import { playerSchemas } from "../validations/playerSchema";
 import { AuthorizationOptions } from "../models/authorizationOptions";
 
 const router: Router = express.Router();
-const adminRoles: AuthorizationOptions["hasRole"] = ["admin"];
 const organizerRoles: AuthorizationOptions["hasRole"] = ["admin", "organizer"];
 const enforcerRoles: AuthorizationOptions["hasRole"] = ["admin", "enforcer"];
 const officerRoles: AuthorizationOptions["hasRole"] = ["admin", "enforcer", "organizer", "officer"];
@@ -44,7 +43,7 @@ const officerRoles: AuthorizationOptions["hasRole"] = ["admin", "enforcer", "org
 router.delete(
   "/:id",
   authenticate,
-  isAuthorized({ hasRole: adminRoles }),
+  isAuthorized({ hasRole: enforcerRoles }),
   validateRequest(playerSchemas.delete),
   playerController.deletePlayer
 );
