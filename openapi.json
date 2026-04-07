@@ -353,64 +353,9 @@
         }
       }
     },
-    "/players": {
-      "post": {
-        "summary": "Create a new player",
-        "tags": [
-          "Players"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "username",
-                  "email",
-                  "organization"
-                ],
-                "properties": {
-                  "username": {
-                    "type": "string",
-                    "example": "ProGamer92"
-                  },
-                  "email": {
-                    "type": "string",
-                    "format": "email",
-                    "example": "player@esports.com"
-                  },
-                  "organization": {
-                    "type": "string",
-                    "example": "team_456def"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Player created successfully"
-          },
-          "400": {
-            "description": "Invalid input"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden - insufficient role"
-          }
-        }
-      },
-      "get": {
-        "summary": "Get all players",
+    "/players/{playerId}": {
+      "delete": {
+        "summary": "Delete player (soft delete - admin and enforcer)",
         "tags": [
           "Players"
         ],
@@ -421,44 +366,31 @@
         ],
         "parameters": [
           {
-            "name": "page",
-            "in": "query",
+            "name": "playerId",
+            "in": "path",
+            "required": true,
             "schema": {
-              "type": "integer",
-              "default": 1
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "default": 10,
-              "maximum": 100
-            }
-          },
-          {
-            "name": "includeDeleted",
-            "in": "query",
-            "schema": {
-              "type": "boolean",
-              "default": false
+              "type": "string"
             }
           }
         ],
         "responses": {
-          "200": {
-            "description": "List of players"
+          "204": {
+            "description": "Player deleted"
           },
           "401": {
             "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Player not found"
           }
         }
-      }
-    },
-    "/players/{playerId}": {
+      },
       "get": {
-        "summary": "Get player by ID",
+        "summary": "Get player by ID (admin, organizer, enforcer, officer)",
         "tags": [
           "Players"
         ],
@@ -488,103 +420,11 @@
             "description": "Player not found"
           }
         }
-      },
-      "put": {
-        "summary": "Update player information",
-        "tags": [
-          "Players"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "playerId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "username": {
-                    "type": "string"
-                  },
-                  "email": {
-                    "type": "string",
-                    "format": "email"
-                  },
-                  "organization": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Player updated"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "404": {
-            "description": "Player not found"
-          }
-        }
-      },
-      "delete": {
-        "summary": "Delete player (soft delete - admin only)",
-        "tags": [
-          "Players"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "playerId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Player deleted"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden - admin only"
-          },
-          "404": {
-            "description": "Player not found"
-          }
-        }
       }
     },
     "/players/{playerId}/blacklist": {
       "post": {
-        "summary": "Blacklist a player",
+        "summary": "Blacklist a player (admin and enforcer)",
         "tags": [
           "Players"
         ],
@@ -639,7 +479,7 @@
         }
       },
       "delete": {
-        "summary": "Unblacklist a player (admin only)",
+        "summary": "Unblacklist a player (admin and enforcer)",
         "tags": [
           "Players"
         ],
@@ -666,7 +506,7 @@
             "description": "Unauthorized"
           },
           "403": {
-            "description": "Forbidden - admin only"
+            "description": "Forbidden"
           },
           "404": {
             "description": "Player not found"
@@ -676,7 +516,7 @@
     },
     "/players/{playerId}/stats": {
       "put": {
-        "summary": "Update player statistics and recalculate rating",
+        "summary": "Update player statistics and recalculate rating (admin and enforcer)",
         "tags": [
           "Players"
         ],
@@ -736,9 +576,169 @@
         }
       }
     },
+    "/players": {
+      "post": {
+        "summary": "Create a new player (admin, organizer)",
+        "tags": [
+          "Players"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "username",
+                  "email",
+                  "organization"
+                ],
+                "properties": {
+                  "username": {
+                    "type": "string",
+                    "example": "ProGamer92"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "player@esports.com"
+                  },
+                  "organization": {
+                    "type": "string",
+                    "example": "team_456def"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Player created successfully"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - insufficient role"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update player information (admin, organizer)",
+        "tags": [
+          "Players"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "organization": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Player updated"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Player not found"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get all players (admin, organizer, enforcer, officer)",
+        "tags": [
+          "Players"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "includeDeleted",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of players"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
     "/players/{playerId}/rating": {
       "get": {
-        "summary": "Get player rating information",
+        "summary": "Get player rating information (admin, organizer, enforcer, officer)",
         "tags": [
           "Players"
         ],
