@@ -178,7 +178,7 @@ router.put(
  * @openapi
  * /players:
  *   post:
- *     summary: Create a new player (admin, organizer)
+ *     summary: Create a new player with optional initial stats (admin, organizer)
  *     tags: [Players]
  *     security:
  *       - bearerAuth: []
@@ -203,9 +203,25 @@ router.put(
  *               organization:
  *                 type: string
  *                 example: "team_456def"
+ *               wins:
+ *                 type: integer
+ *                 minimum: 0
+ *                 example: 45
+ *               losses:
+ *                 type: integer
+ *                 minimum: 0
+ *                 example: 15
+ *               totalKills:
+ *                 type: integer
+ *                 minimum: 0
+ *                 example: 450
+ *               totalDeaths:
+ *                 type: integer
+ *                 minimum: 0
+ *                 example: 150
  *     responses:
  *       201:
- *         description: Player created successfully
+ *         description: Player created successfully with calculated rating
  *       400:
  *         description: Invalid input
  *       401:

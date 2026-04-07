@@ -84,6 +84,38 @@ export const playerSchemas = {
           "any.required": "Organization is required",
           "string.min": "Organization must be at least 2 characters",
         }),
+      wins: Joi.number()
+        .integer()
+        .min(0)
+        .optional()
+        .messages({
+          "number.min": "Wins cannot be negative",
+          "number.base": "Wins must be a number",
+        }),
+      losses: Joi.number()
+        .integer()
+        .min(0)
+        .optional()
+        .messages({
+          "number.min": "Losses cannot be negative",
+          "number.base": "Losses must be a number",
+        }),
+      totalKills: Joi.number()
+        .integer()
+        .min(0)
+        .optional()
+        .messages({
+          "number.min": "Total kills cannot be negative",
+          "number.base": "Total kills must be a number",
+        }),
+      totalDeaths: Joi.number()
+        .integer()
+        .min(0)
+        .optional()
+        .messages({
+          "number.min": "Total deaths cannot be negative",
+          "number.base": "Total deaths must be a number",
+        }),
     }),
   },
 

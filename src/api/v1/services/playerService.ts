@@ -51,19 +51,38 @@ export const createPlayer = async (
     }
 
     const now = new Date();
+    
+    // Extract stats from request (if provided)
+    const wins = data.wins || 0;
+    const losses = data.losses || 0;
+    const totalKills = data.totalKills || 0;
+    const totalDeaths = data.totalDeaths || 0;
+    const totalMatches = wins + losses;
+    
+    // Calculate rating if any stats provided
+    const ratingComponents = calculatePlayerRating(
+      totalMatches,
+      wins,
+      totalKills,
+      totalDeaths,
+      0 // matchesLast30Days starts at 0
+    );
+    
     const playerData = {
-      ...data,
+      username: data.username,
+      email: data.email,
+      organization: data.organization,
       rating: {
         playerId: "", // Will be set after creation
-        totalMatches: 0,
-        wins: 0,
-        losses: 0,
-        totalKills: 0,
-        totalDeaths: 0,
-        winRate: 0,
-        kdRatio: 0,
-        consistency: 0,
-        overallRating: 0,
+        totalMatches,
+        wins,
+        losses,
+        totalKills,
+        totalDeaths,
+        winRate: ratingComponents.winRate,
+        kdRatio: ratingComponents.kdRatio,
+        consistency: ratingComponents.consistency,
+        overallRating: ratingComponents.overallRating,
         matchesLast30Days: 0,
         lastUpdated: now,
       },
