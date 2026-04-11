@@ -7,6 +7,45 @@ import { Request, Response, NextFunction } from "express";
 import * as playerService from "../services/playerService";
 import { successResponse } from "../models/responseModel";
 import { HTTP_STATUS } from "../../../constants/httpConstants";
+import { Player } from "../models/playerModel";
+
+interface PlayerStatsResponse {
+  totalMatches: number;
+  wins: number;
+  losses: number;
+  totalKills: number;
+  totalDeaths: number;
+  winRate: number;
+  kdRatio: number;
+  consistency: number;
+  overallRating: number;
+  matchesLast30Days: number;
+}
+
+interface PlayerDetailsResponse {
+  id: string;
+  name: string;
+  organization: string;
+  stats: PlayerStatsResponse;
+}
+
+const formatPlayerDetails = (player: Player): PlayerDetailsResponse => ({
+  id: player.id,
+  name: player.username,
+  organization: player.organization,
+  stats: {
+    totalMatches: player.rating.totalMatches,
+    wins: player.rating.wins,
+    losses: player.rating.losses,
+    totalKills: player.rating.totalKills,
+    totalDeaths: player.rating.totalDeaths,
+    winRate: player.rating.winRate,
+    kdRatio: player.rating.kdRatio,
+    consistency: player.rating.consistency,
+    overallRating: player.rating.overallRating,
+    matchesLast30Days: player.rating.matchesLast30Days,
+  },
+});
 
 /**
  * POST /api/v1/players - Create new player
@@ -27,7 +66,7 @@ export const createPlayer = async (
     );
 
     res.status(HTTP_STATUS.CREATED).json(
-      successResponse(player, "Player created successfully")
+      successResponse(formatPlayerDetails(player), "Player created successfully")
     );
   } catch (error: unknown) {
     next(error);
@@ -51,8 +90,13 @@ export const getAllPlayers = async (
       Number(limit)
     );
 
+    const formattedResult = {
+      players: result.players.map(formatPlayerDetails),
+      total: result.total,
+    };
+
     res.status(HTTP_STATUS.OK).json(
-      successResponse(result, "Players retrieved successfully")
+      successResponse(formattedResult, "Players retrieved successfully")
     );
   } catch (error: unknown) {
     next(error);
@@ -72,7 +116,7 @@ export const getPlayerById = async (
     const player = await playerService.getPlayerById(id as string);
 
     res.status(HTTP_STATUS.OK).json(
-      successResponse(player, "Player retrieved successfully")
+      successResponse(formatPlayerDetails(player), "Player retrieved successfully")
     );
   } catch (error: unknown) {
     next(error);
@@ -100,7 +144,7 @@ export const updatePlayer = async (
     );
 
     res.status(HTTP_STATUS.OK).json(
-      successResponse(player, "Player updated successfully")
+      successResponse(formatPlayerDetails(player), "Player updated successfully")
     );
   } catch (error: unknown) {
     next(error);
@@ -122,7 +166,35 @@ export const deletePlayer = async (
 
     await playerService.softDeletePlayer(id as string, userId, ipAddress);
 
-    res.status(HTTP_STATUS.NO_CONTENT).send();
+    res.status(HTTP_STATUS.OK).json(
+      successResponse(
+        { id, deleted: true },
+        "Player deleted successfully"
+      )
+    );
+  } catch (error: unknown) {
+    next(error);
+  }
+};
+
+/**
+ * PATCH /api/v1/players/:id/restore - Restore soft-deleted player
+ */
+export const restorePlayer = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const userId = res.locals.uid;
+    const ipAddress = res.locals.clientIP;
+
+    const player = await playerService.restorePlayer(id as string, userId, ipAddress);
+
+    res.status(HTTP_STATUS.OK).json(
+      successResponse(formatPlayerDetails(player), "Player restored successfully")
+    );
   } catch (error: unknown) {
     next(error);
   }
@@ -151,7 +223,7 @@ export const blacklistPlayer = async (
     );
 
     res.status(HTTP_STATUS.OK).json(
-      successResponse(player, "Player blacklisted successfully")
+      successResponse(formatPlayerDetails(player), "Player blacklisted successfully")
     );
   } catch (error: unknown) {
     next(error);
@@ -175,7 +247,7 @@ export const unblacklistPlayer = async (
     const player = await playerService.unblacklistPlayer(id as string, userId, ipAddress);
 
     res.status(HTTP_STATUS.OK).json(
-      successResponse(player, "Player unblacklisted successfully")
+      successResponse(formatPlayerDetails(player), "Player unblacklisted successfully")
     );
   } catch (error: unknown) {
     next(error);

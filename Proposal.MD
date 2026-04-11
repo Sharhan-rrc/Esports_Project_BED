@@ -73,7 +73,7 @@ Audit log collection (audit_logs):
 - Admin: full access to create, read, update, and soft delete players and teams, and manage roles.
 - Organizer: can create and update players and teams for their organization, cannot delete, can read all players.
 - Officer: read-only access to players, teams, matches, and stats.
-- Enforcer: can read and update player records including blacklist fields, cannot create or delete.
+- Enforcer: can read players, soft delete and restore players, and manage blacklist status.
 
 Enforcement approach:
 - Use Firebase custom claims to store role and organization for organizers.
@@ -89,10 +89,11 @@ Players:
 - GET /api/v1/players/:id, get player details
 - POST /api/v1/players, create player for Organizer or Admin
 - PUT /api/v1/players/:id, update player for Organizer (own org), Enforcer (allowed updates), or Admin
-- DELETE /api/v1/players/:id, soft delete player by setting isDeleted=true and deletedAt, Admin only
+- DELETE /api/v1/players/:id, soft delete player by setting isDeleted=true and deletedAt, Enforcer or Admin
 - POST /api/v1/players/:id/blacklist, blacklist player for Enforcer or Admin with body { reason: string }
-- POST /api/v1/players/:id/unblacklist, unblacklist player, Admin only
-- POST /api/v1/players/:id/restore, restore soft deleted player, Admin only
+- DELETE /api/v1/players/:id/blacklist, unblacklist player for Enforcer or Admin
+- PATCH /api/v1/players/:id/restore, restore soft deleted player for Enforcer or Admin
+- GET /api/v1/players?includeDeleted=true, include soft deleted players in list output
 - GET /api/v1/players?includeBlacklisted=true, controlled visibility of blacklisted players
 
 Teams:

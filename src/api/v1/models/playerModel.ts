@@ -47,6 +47,11 @@ export interface CreatePlayerRequest {
   username: string;
   email: string;
   organization: string;
+  wins?: number;
+  losses?: number;
+  totalKills?: number;
+  totalDeaths?: number;
+  matchesLast30Days?: number;
 }
 
 /**

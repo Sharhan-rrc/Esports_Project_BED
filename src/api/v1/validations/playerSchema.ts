@@ -84,6 +84,48 @@ export const playerSchemas = {
           "any.required": "Organization is required",
           "string.min": "Organization must be at least 2 characters",
         }),
+      wins: Joi.number()
+        .integer()
+        .min(0)
+        .optional()
+        .messages({
+          "number.min": "Wins cannot be negative",
+          "number.base": "Wins must be a number",
+        }),
+      losses: Joi.number()
+        .integer()
+        .min(0)
+        .optional()
+        .messages({
+          "number.min": "Losses cannot be negative",
+          "number.base": "Losses must be a number",
+        }),
+      totalKills: Joi.number()
+        .integer()
+        .min(0)
+        .optional()
+        .messages({
+          "number.min": "Total kills cannot be negative",
+          "number.base": "Total kills must be a number",
+        }),
+      totalDeaths: Joi.number()
+        .integer()
+        .min(0)
+        .optional()
+        .messages({
+          "number.min": "Total deaths cannot be negative",
+          "number.base": "Total deaths must be a number",
+        }),
+      matchesLast30Days: Joi.number()
+        .integer()
+        .min(0)
+        .max(30)
+        .optional()
+        .messages({
+          "number.min": "Matches last 30 days cannot be negative",
+          "number.max": "Maximum 30 matches per month for consistency calculation",
+          "number.base": "Matches last 30 days must be a number",
+        }),
     }),
   },
 
@@ -170,6 +212,17 @@ export const playerSchemas = {
 
   // DELETE /players/:id - Delete player
   delete: {
+    params: Joi.object({
+      id: Joi.string()
+        .required()
+        .messages({
+          "any.required": "Player ID is required",
+        }),
+    }),
+  },
+
+  // PATCH /players/:id/restore - Restore deleted player
+  restore: {
     params: Joi.object({
       id: Joi.string()
         .required()

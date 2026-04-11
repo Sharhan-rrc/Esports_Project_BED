@@ -4,6 +4,7 @@
  */
 
 import * as firestoreRepository from "../repositories/firestoreRepository";
+import { FieldValue } from "firebase-admin/firestore";
 import { ServiceError } from "../errors/errors";
 import { HTTP_STATUS } from "../../../constants/httpConstants";
 import {
@@ -51,19 +52,39 @@ export const createPlayer = async (
     }
 
     const now = new Date();
+    
+    // Extract stats from request (if provided)
+    const wins = data.wins || 0;
+    const losses = data.losses || 0;
+    const totalKills = data.totalKills || 0;
+    const totalDeaths = data.totalDeaths || 0;
+    const matchesLast30Days = data.matchesLast30Days || 0;
+    const totalMatches = wins + losses;
+    
+    // Calculate rating if any stats provided
+    const ratingComponents = calculatePlayerRating(
+      totalMatches,
+      wins,
+      totalKills,
+      totalDeaths,
+      matchesLast30Days
+    );
+    
     const playerData = {
-      ...data,
+      username: data.username,
+      email: data.email,
+      organization: data.organization,
       rating: {
         playerId: "", // Will be set after creation
-        totalMatches: 0,
-        wins: 0,
-        losses: 0,
-        totalKills: 0,
-        totalDeaths: 0,
-        winRate: 0,
-        kdRatio: 0,
-        consistency: 0,
-        overallRating: 0,
+        totalMatches,
+        wins,
+        losses,
+        totalKills,
+        totalDeaths,
+        winRate: ratingComponents.winRate,
+        kdRatio: ratingComponents.kdRatio,
+        consistency: ratingComponents.consistency,
+        overallRating: ratingComponents.overallRating,
         matchesLast30Days: 0,
         lastUpdated: now,
       },
@@ -272,6 +293,61 @@ export const softDeletePlayer = async (
 };
 
 /**
+ * Restore soft-deleted player (set isDeleted = false)
+ */
+export const restorePlayer = async (
+  playerId: string,
+  userId: string,
+  ipAddress?: string
+): Promise<Player> => {
+  try {
+    const doc = await firestoreRepository.getDocumentById(
+      PLAYERS_COLLECTION,
+      playerId
+    );
+
+    if (!doc) {
+      throw new ServiceError(
+        "Player not found",
+        "PLAYER_NOT_FOUND",
+        HTTP_STATUS.NOT_FOUND
+      );
+    }
+
+    if (!doc.data()?.isDeleted) {
+      throw new ServiceError(
+        "Player is not deleted",
+        "PLAYER_NOT_DELETED",
+        HTTP_STATUS.CONFLICT
+      );
+    }
+
+    await firestoreRepository.updateDocument(PLAYERS_COLLECTION, playerId, {
+      isDeleted: false,
+      deletedAt: FieldValue.delete(),
+      updatedAt: new Date(),
+    });
+
+    await logAuditEntry(
+      createPlayerAuditLog(
+        "player_restored",
+        playerId,
+        userId,
+        { action: "restored player" },
+        ipAddress
+      )
+    );
+
+    return getPlayerById(playerId);
+  } catch (error: unknown) {
+    if (error instanceof ServiceError) throw error;
+    const message =
+      error instanceof Error ? error.message : "Failed to restore player";
+    throw new ServiceError(message, "RESTORE_PLAYER_ERROR");
+  }
+};
+
+/**
  * Blacklist player
  * BRANCH: feature/blacklist-audit
  */
@@ -348,9 +424,9 @@ export const unblacklistPlayer = async (
 
     const unblacklistData = {
       blacklisted: false,
-      blacklistReason: undefined,
-      blacklistBy: undefined,
-      blacklistAt: undefined,
+      blacklistReason: FieldValue.delete(),
+      blacklistBy: FieldValue.delete(),
+      blacklistAt: FieldValue.delete(),
       updatedAt: new Date(),
     };
 
