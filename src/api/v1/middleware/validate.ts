@@ -84,12 +84,26 @@ export const validateRequest = (
       }
 
       if (schemas.query) {
-        req.query = validatePart(
+        const validatedQuery = validatePart(
           schemas.query,
           req.query,
           "Query",
           defaultOptions.stripQuery
         );
+
+        // Express 5 exposes req.query via getter-only property, so mutate in place.
+        if (defaultOptions.stripQuery) {
+          const currentQuery = req.query as Record<string, unknown>;
+          const sanitizedQuery = validatedQuery as Record<string, unknown>;
+
+          for (const key of Object.keys(currentQuery)) {
+            if (!(key in sanitizedQuery)) {
+              delete currentQuery[key];
+            }
+          }
+
+          Object.assign(currentQuery, sanitizedQuery);
+        }
       }
 
       // Return validation errors if any
