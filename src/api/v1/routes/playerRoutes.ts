@@ -20,7 +20,7 @@ const officerRoles: AuthorizationOptions["hasRole"] = ["admin", "enforcer", "org
  * @openapi
  * /players/{playerId}:
  *   delete:
- *     summary: Delete player (soft delete - admin and enforcer)
+ *     summary: Soft delete player (admin and enforcer)
  *     tags: [Players]
  *     security:
  *       - bearerAuth: []
@@ -31,8 +31,8 @@ const officerRoles: AuthorizationOptions["hasRole"] = ["admin", "enforcer", "org
  *         schema:
  *           type: string
  *     responses:
- *       204:
- *         description: Player deleted
+ *       200:
+ *         description: Player deleted successfully (returns deleted id)
  *       401:
  *         description: Unauthorized
  *       403:
@@ -46,6 +46,38 @@ router.delete(
   isAuthorized({ hasRole: enforcerRoles }),
   validateRequest(playerSchemas.delete),
   playerController.deletePlayer
+);
+
+/**
+ * @openapi
+ * /players/{playerId}/restore:
+ *   patch:
+ *     summary: Restore a soft-deleted player (admin and enforcer)
+ *     tags: [Players]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: playerId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Player restored successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: Player not found
+ */
+router.patch(
+  "/:id/restore",
+  authenticate,
+  isAuthorized({ hasRole: enforcerRoles }),
+  validateRequest(playerSchemas.restore),
+  playerController.restorePlayer
 );
 
 /**
@@ -310,6 +342,7 @@ router.put(
  *           maximum: 100
  *       - name: includeDeleted
  *         in: query
+ *         description: Include soft-deleted players in list results
  *         schema:
  *           type: boolean
  *           default: false

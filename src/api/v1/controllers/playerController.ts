@@ -166,7 +166,35 @@ export const deletePlayer = async (
 
     await playerService.softDeletePlayer(id as string, userId, ipAddress);
 
-    res.status(HTTP_STATUS.NO_CONTENT).send();
+    res.status(HTTP_STATUS.OK).json(
+      successResponse(
+        { id, deleted: true },
+        "Player deleted successfully"
+      )
+    );
+  } catch (error: unknown) {
+    next(error);
+  }
+};
+
+/**
+ * PATCH /api/v1/players/:id/restore - Restore soft-deleted player
+ */
+export const restorePlayer = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const userId = res.locals.uid;
+    const ipAddress = res.locals.clientIP;
+
+    const player = await playerService.restorePlayer(id as string, userId, ipAddress);
+
+    res.status(HTTP_STATUS.OK).json(
+      successResponse(formatPlayerDetails(player), "Player restored successfully")
+    );
   } catch (error: unknown) {
     next(error);
   }

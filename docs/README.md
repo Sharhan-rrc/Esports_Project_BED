@@ -15,6 +15,7 @@ Esports Hub Backend is an Express and TypeScript API for managing players, admin
 ## Main Features
 - Firebase authentication and admin bootstrap
 - Player management and blacklist workflow
+- Soft delete and restore workflow for players
 - Audit logging
 - API validation with Joi
 - Swagger API documentation
