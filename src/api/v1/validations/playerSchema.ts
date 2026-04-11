@@ -221,6 +221,17 @@ export const playerSchemas = {
     }),
   },
 
+  // PATCH /players/:id/restore - Restore deleted player
+  restore: {
+    params: Joi.object({
+      id: Joi.string()
+        .required()
+        .messages({
+          "any.required": "Player ID is required",
+        }),
+    }),
+  },
+
   // POST /players/:id/blacklist - Blacklist player
   blacklist: {
     params: Joi.object({

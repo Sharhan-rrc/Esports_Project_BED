@@ -355,7 +355,7 @@
     },
     "/players/{playerId}": {
       "delete": {
-        "summary": "Delete player (soft delete - admin and enforcer)",
+        "summary": "Soft delete player (admin and enforcer)",
         "tags": [
           "Players"
         ],
@@ -375,8 +375,8 @@
           }
         ],
         "responses": {
-          "204": {
-            "description": "Player deleted"
+          "200": {
+            "description": "Player deleted successfully (returns deleted id)"
           },
           "401": {
             "description": "Unauthorized"
@@ -415,6 +415,43 @@
           },
           "401": {
             "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Player not found"
+          }
+        }
+      }
+    },
+    "/players/{playerId}/restore": {
+      "patch": {
+        "summary": "Restore a soft-deleted player (admin and enforcer)",
+        "tags": [
+          "Players"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Player restored successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
           },
           "404": {
             "description": "Player not found"
@@ -578,7 +615,7 @@
     },
     "/players": {
       "post": {
-        "summary": "Create a new player (admin, organizer)",
+        "summary": "Create a new player with optional initial stats (admin, organizer)",
         "tags": [
           "Players"
         ],
@@ -611,6 +648,32 @@
                   "organization": {
                     "type": "string",
                     "example": "team_456def"
+                  },
+                  "wins": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 45
+                  },
+                  "losses": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 15
+                  },
+                  "totalKills": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 450
+                  },
+                  "totalDeaths": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 150
+                  },
+                  "matchesLast30Days": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 30,
+                    "example": 22
                   }
                 }
               }
@@ -619,7 +682,7 @@
         },
         "responses": {
           "201": {
-            "description": "Player created successfully"
+            "description": "Player created successfully with calculated rating"
           },
           "400": {
             "description": "Invalid input"
@@ -720,6 +783,7 @@
           {
             "name": "includeDeleted",
             "in": "query",
+            "description": "Include soft-deleted players in list results",
             "schema": {
               "type": "boolean",
               "default": false
