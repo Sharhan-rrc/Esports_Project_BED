@@ -39,6 +39,14 @@ Esports Hub Backend is an Express and TypeScript API for managing players, admin
 4. Copy or keep the Markdown docs in `docs/` for the main branch.
 5. Publish the generated HTML docs from the documentation branch with GitHub Pages.
 
+## Soft Delete And Restore
+- Player delete is implemented as soft delete, not hard delete.
+- `DELETE /api/v1/players/:id` sets `isDeleted=true` and records `deletedAt`.
+- Soft-deleted players are excluded from standard player reads.
+- `GET /api/v1/players?includeDeleted=true` includes deleted players in list results.
+- `PATCH /api/v1/players/:id/restore` reactivates a soft-deleted player.
+- Restore access is restricted to `admin` and `enforcer`.
+
 ## Important Files
 - `docs/index.html` - Generated API documentation
 - `openapi.json` - Generated OpenAPI spec
