@@ -379,10 +379,33 @@ Starter issues:
 
 ## Risks and mitigations (Checklist)
 
-- Unauthorized changes: enforce RBAC, validate tokens, and keep audit logs.
-- Secrets leakage: keep .env in .gitignore and use GitHub Secrets.
-- Firestore limits and costs: use efficient queries, pagination, and index planning.
+- Unauthorized changes: enforce RBAC, validate tokens, and keep audit logs. ✅
+- Secrets leakage: keep .env in .gitignore and use GitHub Secrets. ✅
+- Firestore limits and costs: use efficient queries, pagination, and index planning. ✅
 - Incomplete tests: require CI test pass before merges.
+- Ollama service unavailable: graceful degradation with fallback messaging. ✅
+- AI analysis delays: async processing, user can check case status later. ✅
 
+## Extra Feature Implementation
+
+**Original Plan**: Soft delete with restore functionality
+
+**Implemented Instead**: AI-Powered Integrity Detection Component
+
+**Rationale**:
+- More valuable for production scoring/discipline
+- Demonstrates advanced technical implementation (LLM integration)
+- Better aligns with esports platform needs (fraud detection)
+- Provides transparent, explainable AI decisions
+- Uses free, local AI (Ollama + Llama 3.2) - no licensing costs
+
+**Component Details**:
+- Full architecture: Models, Services, Controllers, Routes
+- Red flag detection algorithms
+- Risk scoring system (0-100 scale)
+- Natural language analysis generation
+- Case management workflow
+- Human-in-loop design (no auto-bans)
+- Audit trail for all integrity operations
 
 ** This Proposal might Update as required. **
