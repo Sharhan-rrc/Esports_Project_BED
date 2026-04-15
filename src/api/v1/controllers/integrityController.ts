@@ -17,7 +17,7 @@ export const scanPlayer = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { playerId } = req.params;
+    const playerId = req.params.playerId as string;
     const userId = res.locals.uid;
 
     const integrityCase = await integrityService.scanPlayerForViolations(
@@ -106,12 +106,13 @@ export const getCaseDetails = async (
     const caseData = cases.find((c) => c.id === caseId);
 
     if (!caseData) {
-      return res.status(HTTP_STATUS.NOT_FOUND).json({
+      res.status(HTTP_STATUS.NOT_FOUND).json({
         error: {
           code: "CASE_NOT_FOUND",
           message: "Case not found",
         },
       });
+      return;
     }
 
     res.status(HTTP_STATUS.OK).json(
@@ -131,7 +132,7 @@ export const updateCase = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { caseId } = req.params;
+    const caseId = req.params.caseId as string;
     const { status, adminNotes } = req.body;
     const userId = res.locals.uid;
 
