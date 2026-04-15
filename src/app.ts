@@ -31,6 +31,7 @@ import errorHandler from "./api/v1/middleware/errorHandler";
 import playerRoutes from "./api/v1/routes/playerRoutes";
 import adminRoutes from "./api/v1/routes/adminRoutes";
 import authRoutes from "./api/v1/routes/authRoutes";
+import integrityRoutes from "./api/v1/routes/integrityRoutes";
 
 const app: Express = express();
 const appStartedAt = new Date().toISOString();
@@ -86,6 +87,9 @@ app.use("/api/v1/auth", authRoutes);
 
 // Player routes (all authenticated)
 app.use("/api/v1/players", playerRoutes);
+
+// Integrity routes (AI-powered violation detection - admin only)
+app.use("/api/v1/integrity", integrityRoutes);
 
 // ============ 404 HANDLER ============
 

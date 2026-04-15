@@ -67,7 +67,10 @@ export const createPlayer = async (
       wins,
       totalKills,
       totalDeaths,
-      matchesLast30Days
+      matchesLast30Days,
+      0, // blacklistCount
+      0, // reportedCount
+      0  // suspiciousFlags
     );
     
     const playerData = {
@@ -84,14 +87,16 @@ export const createPlayer = async (
         winRate: ratingComponents.winRate,
         kdRatio: ratingComponents.kdRatio,
         consistency: ratingComponents.consistency,
+        integrityScore: ratingComponents.integrityScore,
         overallRating: ratingComponents.overallRating,
+        riskLevel: ratingComponents.riskLevel,
         matchesLast30Days: 0,
         lastUpdated: now,
       },
       blacklisted: false,
+      integrityFlags: 0,
       createdAt: now,
       updatedAt: now,
-      isDeleted: false,
     };
 
     const playerId = await firestoreRepository.createDocument(
@@ -128,11 +133,10 @@ export const createPlayer = async (
 };
 
 /**
- * Get all players (excluding deleted unless specified)
+ * Get all players
  * BRANCH: feature/players-crud
  */
 export const getAllPlayers = async (
-  includeDeleted: boolean = false,
   page: number = 1,
   limit: number = 10
 ): Promise<{ players: Player[]; total: number }> => {
@@ -142,7 +146,6 @@ export const getAllPlayers = async (
 
     snapshot.forEach((doc) => {
       const data = doc.data();
-      if (!includeDeleted && data.isDeleted) return;
       players.push({
         id: doc.id,
         ...data,
@@ -175,7 +178,7 @@ export const getPlayerById = async (playerId: string): Promise<Player> => {
       playerId
     );
 
-    if (!doc || doc.data()?.isDeleted) {
+    if (!doc || !doc.exists) {
       throw new ServiceError(
         "Player not found",
         "PLAYER_NOT_FOUND",
@@ -253,97 +256,6 @@ export const updatePlayer = async (
     const message =
       error instanceof Error ? error.message : "Failed to update player";
     throw new ServiceError(message, "UPDATE_PLAYER_ERROR");
-  }
-};
-
-/**
- * Soft delete player (set isDeleted = true)
- * BRANCH: feature/players-crud
- */
-export const softDeletePlayer = async (
-  playerId: string,
-  userId: string,
-  ipAddress?: string
-): Promise<void> => {
-  try {
-    await getPlayerById(playerId); // Verify player exists
-
-    await firestoreRepository.updateDocument(PLAYERS_COLLECTION, playerId, {
-      isDeleted: true,
-      deletedAt: new Date(),
-      updatedAt: new Date(),
-    });
-
-    // Log audit entry
-    await logAuditEntry(
-      createPlayerAuditLog(
-        "player_deleted",
-        playerId,
-        userId,
-        { action: "soft deleted player" },
-        ipAddress
-      )
-    );
-  } catch (error: unknown) {
-    if (error instanceof ServiceError) throw error;
-    const message =
-      error instanceof Error ? error.message : "Failed to delete player";
-    throw new ServiceError(message, "DELETE_PLAYER_ERROR");
-  }
-};
-
-/**
- * Restore soft-deleted player (set isDeleted = false)
- */
-export const restorePlayer = async (
-  playerId: string,
-  userId: string,
-  ipAddress?: string
-): Promise<Player> => {
-  try {
-    const doc = await firestoreRepository.getDocumentById(
-      PLAYERS_COLLECTION,
-      playerId
-    );
-
-    if (!doc) {
-      throw new ServiceError(
-        "Player not found",
-        "PLAYER_NOT_FOUND",
-        HTTP_STATUS.NOT_FOUND
-      );
-    }
-
-    if (!doc.data()?.isDeleted) {
-      throw new ServiceError(
-        "Player is not deleted",
-        "PLAYER_NOT_DELETED",
-        HTTP_STATUS.CONFLICT
-      );
-    }
-
-    await firestoreRepository.updateDocument(PLAYERS_COLLECTION, playerId, {
-      isDeleted: false,
-      deletedAt: FieldValue.delete(),
-      updatedAt: new Date(),
-    });
-
-    await logAuditEntry(
-      createPlayerAuditLog(
-        "player_restored",
-        playerId,
-        userId,
-        { action: "restored player" },
-        ipAddress
-      )
-    );
-
-    return getPlayerById(playerId);
-  } catch (error: unknown) {
-    if (error instanceof ServiceError) throw error;
-    const message =
-      error instanceof Error ? error.message : "Failed to restore player";
-    throw new ServiceError(message, "RESTORE_PLAYER_ERROR");
   }
 };
 
