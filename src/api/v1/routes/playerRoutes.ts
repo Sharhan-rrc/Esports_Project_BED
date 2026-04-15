@@ -356,4 +356,51 @@ router.get(
   playerController.getPlayerRating
 );
 
+/**
+ * @openapi
+ * /players/{playerId}:
+ *   delete:
+ *     summary: Permanently delete player (admin only - HARD DELETE)
+ *     tags: [Players]
+ *     description: PERMANENT deletion - completely removes player record from database. Use for major violations or data cleanup only. This action cannot be undone.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: playerId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Player permanently deleted from system
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     permanently_deleted:
+ *                       type: boolean
+ *                 message:
+ *                   type: string
+ *       401:
+ *         description: Unauthorized - no authentication token
+ *       403:
+ *         description: Forbidden - admin role required
+ *       404:
+ *         description: Player not found
+ */
+router.delete(
+  "/:id",
+  authenticate,
+  isAuthorized({ hasRole: ["admin"] }),
+  validateRequest(playerSchemas.delete),
+  playerController.deletePlayer
+);
+
 export default router;

@@ -151,6 +151,32 @@ export const updatePlayer = async (
 };
 
 /**
+ * DELETE /api/v1/players/:id - Hard delete player (permanent removal)
+ */
+export const deletePlayer = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const userId = res.locals.uid;
+    const ipAddress = res.locals.clientIP;
+
+    await playerService.hardDeletePlayer(id as string, userId, ipAddress);
+
+    res.status(HTTP_STATUS.OK).json(
+      successResponse(
+        { id, permanently_deleted: true },
+        "Player permanently deleted from system"
+      )
+    );
+  } catch (error: unknown) {
+    next(error);
+  }
+};
+
+/**
  * POST /api/v1/players/:id/blacklist - Blacklist player
  * BRANCH: feature/blacklist-audit
  */

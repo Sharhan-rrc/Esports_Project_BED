@@ -260,6 +260,42 @@ export const updatePlayer = async (
 };
 
 /**
+ * Hard delete player - Permanently removes player record from database
+ * Admin only - used for major violations or data cleanup
+ * 
+ * @param playerId - Player ID to delete
+ * @param userId - Admin UUID performing deletion
+ * @param ipAddress - Client IP for audit log
+ */
+export const hardDeletePlayer = async (
+  playerId: string,
+  userId: string,
+  ipAddress?: string
+): Promise<void> => {
+  try {
+    await getPlayerById(playerId); // Verify player exists
+
+    await firestoreRepository.deleteDocument(PLAYERS_COLLECTION, playerId);
+
+    // Log audit entry
+    await logAuditEntry(
+      createPlayerAuditLog(
+        "player_hard_deleted",
+        playerId,
+        userId,
+        { action: "permanently deleted player" },
+        ipAddress
+      )
+    );
+  } catch (error: unknown) {
+    if (error instanceof ServiceError) throw error;
+    const message =
+      error instanceof Error ? error.message : "Failed to delete player";
+    throw new ServiceError(message, "DELETE_PLAYER_ERROR");
+  }
+};
+
+/**
  * Blacklist player
  * BRANCH: feature/blacklist-audit
  */
