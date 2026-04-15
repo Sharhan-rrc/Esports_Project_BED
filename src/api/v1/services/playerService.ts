@@ -90,7 +90,7 @@ export const createPlayer = async (
         integrityScore: ratingComponents.integrityScore,
         overallRating: ratingComponents.overallRating,
         riskLevel: ratingComponents.riskLevel,
-        matchesLast30Days: 0,
+        matchesLast30Days: matchesLast30Days,
         lastUpdated: now,
       },
       blacklisted: false,

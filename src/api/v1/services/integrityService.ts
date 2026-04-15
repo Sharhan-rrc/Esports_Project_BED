@@ -279,13 +279,17 @@ export const updateIntegrityCase = async (
       );
     }
 
-    const updateData = {
+    const updateData: any = {
       status,
       adminNotes: adminNotes || caseDoc.data()?.adminNotes,
-      resolvedBy: status === "resolved" ? userId : caseDoc.data()?.resolvedBy,
-      resolvedAt: status === "resolved" ? new Date() : caseDoc.data()?.resolvedAt,
       updatedAt: new Date(),
     };
+
+    // Only add resolvedBy and resolvedAt if case is being resolved
+    if (status === "resolved") {
+      updateData.resolvedBy = userId;
+      updateData.resolvedAt = new Date();
+    }
 
     await firestoreRepository.updateDocument(CASES_COLLECTION, caseId, updateData);
 
