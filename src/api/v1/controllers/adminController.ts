@@ -14,6 +14,7 @@ import {
   ServiceError,
 } from "../errors/errors";
 import * as firestoreRepository from "../repositories/firestoreRepository";
+import * as playerService from "../services/playerService";
 import { logAuditEntry } from "../middleware/auditLogger";
 
 /**
@@ -317,5 +318,47 @@ export const enableUser = async (
     } else {
       next(new ServiceError("Failed to enable user", "ENABLE_USER_ERROR"));
     }
+  }
+};
+
+/**
+ * Get all deleted players
+ * Admin only - for identifying which players have been deleted
+ */
+export const getDeletedPlayers = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+
+    const result = await playerService.getDeletedPlayers(
+      Number(page),
+      Number(limit)
+    );
+
+    // Format the response to include deletion details
+    const formattedResult = {
+      deletedPlayers: result.players.map((player) => ({
+        id: player.id,
+        username: player.username,
+        email: player.email,
+        organization: player.organization,
+        deletedAt: player.deletedAt,
+        rating: player.rating,
+        createdAt: player.createdAt,
+        updatedAt: player.updatedAt,
+      })),
+      total: result.total,
+      page: Number(page),
+      limit: Number(limit),
+    };
+
+    res.status(HTTP_STATUS.OK).json(
+      successResponse(formattedResult, "Deleted players retrieved successfully")
+    );
+  } catch (error: unknown) {
+    next(error);
   }
 };

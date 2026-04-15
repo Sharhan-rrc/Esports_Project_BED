@@ -239,4 +239,38 @@ router.post(
   adminController.enableUser
 );
 
+/**
+ * @openapi
+ * /admin/players/deleted:
+ *   get:
+ *     summary: Get all deleted players (admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: page
+ *         in: query
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - name: limit
+ *         in: query
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *     responses:
+ *       200:
+ *         description: List of deleted players with deletion timestamps
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - admin only
+ */
+router.get(
+  "/players/deleted",
+  authenticate,
+  isAuthorized({ hasRole: ["admin"] }),
+  adminController.getDeletedPlayers
+);
+
 export default router;

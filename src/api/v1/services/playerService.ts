@@ -445,3 +445,47 @@ export const updatePlayerStats = async (
     throw new ServiceError(message, "UPDATE_STATS_ERROR");
   }
 };
+
+/**
+ * Get all deleted players with deletion details
+ * Admin only - for audit and restoration purposes
+ */
+export const getDeletedPlayers = async (
+  page: number = 1,
+  limit: number = 10
+): Promise<{ players: Player[]; total: number }> => {
+  try {
+    const snapshot = await firestoreRepository.getDocuments(PLAYERS_COLLECTION);
+    let deletedPlayers: Player[] = [];
+
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      if (data.isDeleted) {
+        deletedPlayers.push({
+          id: doc.id,
+          ...data,
+        } as Player);
+      }
+    });
+
+    // Sort by deletion date (newest first)
+    deletedPlayers.sort((a, b) => {
+      const dateA = a.deletedAt ? new Date(a.deletedAt).getTime() : 0;
+      const dateB = b.deletedAt ? new Date(b.deletedAt).getTime() : 0;
+      return dateB - dateA;
+    });
+
+    // Simple pagination
+    const start = (page - 1) * limit;
+    const paginatedPlayers = deletedPlayers.slice(start, start + limit);
+
+    return {
+      players: paginatedPlayers,
+      total: deletedPlayers.length,
+    };
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : "Failed to fetch deleted players";
+    throw new ServiceError(message, "GET_DELETED_PLAYERS_ERROR");
+  }
+};
