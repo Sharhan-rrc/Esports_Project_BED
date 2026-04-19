@@ -2,16 +2,16 @@
 
 ## Project Overview
 
-**Esports Hub** is a comprehensive backend API for managing professional esports tournaments, player ratings, and integrity enforcement. Built with Node.js, Express, and TypeScript, it provides a robust system for player management, skill-based rating calculation, and AI-powered fraud detection.
+Esports Hub is a comprehensive backend API for managing professional esports tournaments, player ratings, and integrity enforcement. Built with Node.js, Express, and TypeScript, it provides a robust system for player management, skill-based rating calculation, and AI-powered fraud detection.
 
 ### Key Capabilities
-- **Player Management:** Create, update, retrieve, and delete player profiles
-- **Intelligent Rating System:** 4-factor rating algorithm combining skill, consistency, and integrity metrics
-- **AI Integrity Detection:** Local Ollama integration (Llama 3.2) for suspicious player detection
-- **Role-Based Access Control:** 4-tier permission system (admin, enforcer, organizer, officer)
-- **Audit Logging:** Complete audit trail for sensitive operations
-- **Firebase Authentication:** Secure token-based authentication
-- **API Documentation:** Interactive Swagger UI with OpenAPI specification
+- Player Management: Create, update, retrieve, and delete player profiles
+- Intelligent Rating System: 4-factor rating algorithm combining skill, consistency, and integrity metrics
+- AI Integrity Detection: Local Ollama integration (Llama 3.2) for suspicious player detection
+- Role-Based Access Control: 4-tier permission system (admin, enforcer, organizer, officer)
+- Audit Logging: Complete audit trail for sensitive operations
+- Firebase Authentication: Secure token-based authentication
+- API Documentation: Interactive Swagger UI with OpenAPI specification
 
 ---
 
