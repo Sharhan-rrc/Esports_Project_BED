@@ -37,6 +37,9 @@ export interface Player {
   blacklistBy?: string; // uid of admin/enforcer
   blacklistAt?: Date;
   integrityFlags: number; // Count of integrity issues
+  isDeleted?: boolean; // Soft delete flag for archival
+  deletedBy?: string; // uid of admin who deleted
+  deletedAt?: Date; // When player was deleted
   createdAt: Date;
   updatedAt: Date;
 }
