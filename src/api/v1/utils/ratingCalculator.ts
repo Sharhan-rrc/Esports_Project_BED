@@ -1,15 +1,15 @@
 /**
- * Player rating calculation utility
+ * Player rating calculation utility with integrity scoring
  * Path: src/api/v1/utils/ratingCalculator.ts
  */
-
-
 
 interface RatingComponents {
   winRate: number;
   kdRatio: number;
   consistency: number;
+  integrityScore: number;
   overallRating: number;
+  riskLevel: "low" | "medium" | "high";
 }
 
 /**
@@ -39,7 +39,6 @@ export const calculateWinRate = (
  */
 export const calculateKDRatio = (kills: number, deaths: number): number => {
   if (deaths === 0) {
-    // If no deaths, ratio is infinite; cap at 5
     return kills > 0 ? 5 : 0;
   }
   const kdRatio = kills / deaths;
@@ -57,14 +56,57 @@ export const calculateKDRatio = (kills: number, deaths: number): number => {
 export const calculateConsistency = (
   matchesLast30Days: number
 ): number => {
-  // Maximum 30 matches per month for perfect consistency
   const consistency = (matchesLast30Days / 30) * 5;
   return Math.min(consistency, 5);
 };
 
 /**
- * Calculate overall rating
- * Formula: (0.40 × WIN_RATE) + (0.35 × K/D_RATIO) + (0.25 × CONSISTENCY)
+ * Calculate integrity score based on behavior
+ * Penalizes: blacklist incidents, reported violations, suspicious stat spikes
+ * 
+ * @param blacklistCount - Number of times blacklisted
+ * @param reportedCount - Number of reports/violations
+ * @param suspiciousFlags - Count of detected red flags
+ * @returns Integrity score 0-5 (5 = perfect integrity)
+ */
+export const calculateIntegrityScore = (
+  blacklistCount: number,
+  reportedCount: number,
+  suspiciousFlags: number
+): number => {
+  // Start with perfect integrity
+  let integrityScore = 5;
+
+  // Deduct for blacklist incidents (-1 per incident)
+  integrityScore -= blacklistCount * 1;
+
+  // Deduct for reports/violations (-0.5 per incident)
+  integrityScore -= reportedCount * 0.5;
+
+  // Deduct for suspicious flags (-0.3 per flag)
+  integrityScore -= suspiciousFlags * 0.3;
+
+  // Floor at 0, cap at 5
+  return Math.max(0, Math.min(integrityScore, 5));
+};
+
+/**
+ * Determine risk level based on integrity score
+ * 
+ * @param integrityScore - Integrity score 0-5
+ * @returns Risk level classification
+ */
+export const determineRiskLevel = (
+  integrityScore: number
+): "low" | "medium" | "high" => {
+  if (integrityScore >= 4) return "low";
+  if (integrityScore >= 2.5) return "medium";
+  return "high";
+};
+
+/**
+ * Calculate overall rating with integrity weighting
+ * Formula: (0.35 × WIN_RATE) + (0.30 × K/D_RATIO) + (0.20 × CONSISTENCY) + (0.15 × INTEGRITY)
  * 
  * @param components - Rating components
  * @returns Overall rating 0-5
@@ -73,21 +115,25 @@ export const calculateOverallRating = (
   components: RatingComponents
 ): number => {
   const overall =
-    0.4 * components.winRate +
-    0.35 * components.kdRatio +
-    0.25 * components.consistency;
+    0.35 * components.winRate +
+    0.30 * components.kdRatio +
+    0.20 * components.consistency +
+    0.15 * components.integrityScore;
 
   return Math.min(Math.round(overall * 100) / 100, 5);
 };
 
 /**
- * Calculate complete player rating
+ * Calculate complete player rating with integrity
  * 
  * @param totalMatches - Total matches
  * @param wins - Total wins
  * @param totalKills - Total kills
  * @param totalDeaths - Total deaths
  * @param matchesLast30Days - Matches in last 30 days
+ * @param blacklistCount - Times blacklisted
+ * @param reportedCount - Times reported
+ * @param suspiciousFlags - Detected red flags
  * @returns Complete rating components and overall score
  */
 export const calculatePlayerRating = (
@@ -95,42 +141,36 @@ export const calculatePlayerRating = (
   wins: number,
   totalKills: number,
   totalDeaths: number,
-  matchesLast30Days: number
+  matchesLast30Days: number,
+  blacklistCount: number = 0,
+  reportedCount: number = 0,
+  suspiciousFlags: number = 0
 ): RatingComponents => {
   const winRate = calculateWinRate(wins, totalMatches);
   const kdRatio = calculateKDRatio(totalKills, totalDeaths);
   const consistency = calculateConsistency(matchesLast30Days);
+  const integrityScore = calculateIntegrityScore(
+    blacklistCount,
+    reportedCount,
+    suspiciousFlags
+  );
+  const riskLevel = determineRiskLevel(integrityScore);
+
   const overallRating = calculateOverallRating({
     winRate,
     kdRatio,
     consistency,
-    overallRating: 0, // Will be calculated
+    integrityScore,
+    overallRating: 0,
+    riskLevel,
   });
 
   return {
     winRate,
     kdRatio,
     consistency,
+    integrityScore,
     overallRating,
+    riskLevel,
   };
 };
-
-/**
- * Example calculation
- * 
- * Player Stats:
- * - Total Matches: 150
- * - Wins: 105
- * - Total Kills: 3250
- * - Total Deaths: 1500
- * - Matches Last 30 Days: 18
- * 
- * Calculations:
- * WIN_RATE = (105/150) × 5 = 3.5
- * K/D_RATIO = (3250/1500) × 2.5 = 5.42 → 5.0 (capped)
- * CONSISTENCY = (18/30) × 5 = 3.0
- * 
- * OVERALL_RATING = (0.40 × 3.5) + (0.35 × 5.0) + (0.25 × 3.0)
- *                = 1.4 + 1.75 + 0.75
- *                = 3.9 out of 5
- */

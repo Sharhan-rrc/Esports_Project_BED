@@ -4,7 +4,7 @@
  */
 
 /**
- * Player rating information
+ * Player rating information with integrity scoring
  */
 export interface PlayerRating {
   playerId: string;
@@ -16,8 +16,10 @@ export interface PlayerRating {
   winRate: number; // 0-5
   kdRatio: number; // 0-5
   consistency: number; // 0-5
-  overallRating: number; // 0-5 (Final Rating)
+  integrityScore: number; // 0-5 (behavior & trustworthiness)
+  overallRating: number; // 0-5 (Final Rating with integrity)
   matchesLast30Days: number;
+  riskLevel: "low" | "medium" | "high"; // Determined by integrity
   lastUpdated: Date;
 }
 
@@ -34,10 +36,12 @@ export interface Player {
   blacklistReason?: string;
   blacklistBy?: string; // uid of admin/enforcer
   blacklistAt?: Date;
+  integrityFlags: number; // Count of integrity issues
+  isDeleted?: boolean; // Soft delete flag for archival
+  deletedBy?: string; // uid of admin who deleted
+  deletedAt?: Date; // When player was deleted
   createdAt: Date;
   updatedAt: Date;
-  isDeleted: boolean;
-  deletedAt?: Date;
 }
 
 /**
@@ -81,8 +85,8 @@ export interface BlacklistPlayerRequest {
 }
 
 /**
- * Player response with rating
+ * Player response with integrity rating
  */
 export interface PlayerResponse extends Player {
-  riskLevel?: "low" | "medium" | "high"; // Based on rating
+  // Player already includes rating with riskLevel
 }

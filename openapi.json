@@ -1,14 +1,43 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "Esports Hub API Documentation",
+    "title": "Esports Hub API",
     "version": "1.0.0",
-    "description": "API documentation for the Esports Hub backend application."
+    "description": "Comprehensive API for esports player management, rating calculation, and AI-powered integrity detection. Built with Node.js, Express, and TypeScript.",
+    "contact": {
+      "name": "Sharhan Kaji",
+      "email": "developer@esports-hub.com"
+    },
+    "license": {
+      "name": "MIT"
+    }
   },
   "servers": [
     {
       "url": "http://localhost:3000/api/v1",
-      "description": "Local server"
+      "description": "Local Development Server"
+    },
+    {
+      "url": "https://api.esports-hub.com/api/v1",
+      "description": "Production Server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Authentication",
+      "description": "User authentication and token management"
+    },
+    {
+      "name": "Admin",
+      "description": "Administrative functions (admin only)"
+    },
+    {
+      "name": "Players",
+      "description": "Player management and statistics"
+    },
+    {
+      "name": "Integrity",
+      "description": "AI-powered integrity detection and case management"
     }
   ],
   "components": {
@@ -16,29 +45,26 @@
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer",
-        "bearerFormat": "JWT"
+        "bearerFormat": "JWT",
+        "description": "Firebase ID Token (JWT format)"
       }
     },
     "schemas": {
       "Player": {
         "type": "object",
-        "required": [
-          "id",
-          "username",
-          "email",
-          "organization"
-        ],
+        "required": ["id", "username", "email", "organization"],
         "properties": {
           "id": {
             "type": "string",
-            "description": "Player unique identifier",
+            "description": "Unique player identifier",
             "example": "player_abc123xyz789"
           },
           "username": {
             "type": "string",
             "minLength": 3,
             "maxLength": 50,
-            "description": "Player username",
+            "pattern": "^[a-zA-Z0-9]+$",
+            "description": "Alphanumeric username",
             "example": "ProGamer92"
           },
           "email": {
@@ -49,27 +75,254 @@
           },
           "organization": {
             "type": "string",
-            "description": "Organization/team name",
-            "example": "team_456def"
+            "minLength": 2,
+            "maxLength": 100,
+            "description": "Team or organization name",
+            "example": "Team Acme"
           },
           "blacklisted": {
             "type": "boolean",
             "default": false,
-            "description": "Whether player is blacklisted"
+            "description": "Whether player is currently blacklisted"
           },
           "blacklistReason": {
             "type": "string",
-            "description": "Reason for blacklist if applicable"
+            "description": "Reason for blacklist if applicable",
+            "example": "Cheating violation"
+          },
+          "integrityFlags": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Count of integrity issues"
           },
           "createdAt": {
             "type": "string",
             "format": "date-time",
-            "description": "When player was created"
+            "description": "Player creation timestamp"
           },
           "updatedAt": {
             "type": "string",
             "format": "date-time",
-            "description": "When player was last updated"
+            "description": "Last update timestamp"
+          }
+        }
+      },
+      "PlayerRating": {
+        "type": "object",
+        "properties": {
+          "playerId": {
+            "type": "string",
+            "description": "Player ID"
+          },
+          "totalMatches": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Total matches played"
+          },
+          "wins": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Total wins"
+          },
+          "losses": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Total losses"
+          },
+          "totalKills": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Total kills across all matches"
+          },
+          "totalDeaths": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Total deaths across all matches"
+          },
+          "winRate": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 5,
+            "description": "Win rate component (0-5)"
+          },
+          "kdRatio": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 5,
+            "description": "Kill/Death ratio component (0-5)"
+          },
+          "consistency": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 5,
+            "description": "Consistency component based on recent activity (0-5)"
+          },
+          "integrityScore": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 5,
+            "description": "Integrity score based on behavior (0-5)"
+          },
+          "overallRating": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 5,
+            "description": "Final combined rating (0-5)"
+          },
+          "riskLevel": {
+            "type": "string",
+            "enum": ["low", "medium", "high"],
+            "description": "Risk classification"
+          },
+          "matchesLast30Days": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 30,
+            "description": "Matches played in last 30 days"
+          },
+          "lastUpdated": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When rating was last calculated"
+          }
+        }
+      },
+      "IntegrityCase": {
+        "type": "object",
+        "required": ["id", "playerId", "riskScore", "status"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Case ID"
+          },
+          "playerId": {
+            "type": "string",
+            "description": "Player being investigated"
+          },
+          "playerUsername": {
+            "type": "string",
+            "description": "Player username"
+          },
+          "playerEmail": {
+            "type": "string",
+            "format": "email",
+            "description": "Player email"
+          },
+          "riskScore": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "AI-calculated risk score (0-100)"
+          },
+          "riskLevel": {
+            "type": "string",
+            "enum": ["low", "medium", "high"],
+            "description": "Risk level classification"
+          },
+          "flags": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "flag": {
+                  "type": "string",
+                  "enum": ["kdRatioSpike", "winRateSpike", "suspiciousConsistency", "blacklistHistory", "reportedViolations"],
+                  "description": "Type of integrity flag"
+                },
+                "severity": {
+                  "type": "string",
+                  "enum": ["low", "medium", "high"],
+                  "description": "Flag severity"
+                },
+                "reason": {
+                  "type": "string",
+                  "description": "Explanation of the flag"
+                },
+                "detectedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "When flag was detected"
+                }
+              }
+            }
+          },
+          "aiAnalysis": {
+            "type": "string",
+            "description": "AI-generated investigation summary from Llama 3.2"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["open", "investigating", "resolved", "false_positive"],
+            "description": "Case status"
+          },
+          "recommendedAction": {
+            "type": "string",
+            "enum": ["warn", "monitor", "temporary_ban", "blacklist", "clear"],
+            "description": "Recommended disciplinary action"
+          },
+          "adminNotes": {
+            "type": "string",
+            "description": "Admin notes on the case"
+          },
+          "resolvedBy": {
+            "type": "string",
+            "description": "User ID of admin who resolved case"
+          },
+          "resolvedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When case was resolved"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": ["status", "error"],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["error"]
+          },
+          "error": {
+            "type": "object",
+            "required": ["code", "message"],
+            "properties": {
+              "code": {
+                "type": "string",
+                "description": "Machine-readable error code",
+                "example": "INVALID_TOKEN"
+              },
+              "message": {
+                "type": "string",
+                "description": "Human-readable error message"
+              }
+            }
+          }
+        }
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "required": ["status", "data"],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["success"]
+          },
+          "data": {
+            "type": "object",
+            "description": "Response payload (varies by endpoint)"
+          },
+          "message": {
+            "type": "string",
+            "description": "Optional success message"
           }
         }
       }
@@ -81,6 +334,789 @@
     }
   ],
   "paths": {
+    "/auth/login": {
+      "post": {
+        "summary": "Login with Firebase token",
+        "tags": ["Authentication"],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["token"],
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "description": "Firebase ID Token",
+                    "example": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or expired token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "summary": "Get current authenticated user",
+        "tags": ["Authentication"],
+        "responses": {
+          "200": {
+            "description": "Current user information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/bootstrap": {
+      "post": {
+        "summary": "Bootstrap first admin user (one-time only)",
+        "tags": ["Admin"],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "admin@esports.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 8,
+                    "example": "SecurePassword123!"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Admin user created successfully"
+          },
+          "409": {
+            "description": "Admin already exists"
+          },
+          "422": {
+            "description": "Validation error"
+          }
+        }
+      }
+    },
+    "/admin/assign-role": {
+      "post": {
+        "summary": "Assign role to user",
+        "tags": ["Admin"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["uid", "role"],
+                "properties": {
+                  "uid": {
+                    "type": "string",
+                    "example": "user_abc123"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": ["admin", "enforcer", "organizer", "officer"],
+                    "example": "enforcer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Role assigned successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - admin only"
+          },
+          "422": {
+            "description": "Validation error"
+          }
+        }
+      }
+    },
+    "/admin/users/{uid}": {
+      "get": {
+        "summary": "Get user details",
+        "tags": ["Admin"],
+        "parameters": [
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User details"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - admin only"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      }
+    },
+    "/players": {
+      "post": {
+        "summary": "Create new player",
+        "tags": ["Players"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["username", "email", "organization"],
+                "properties": {
+                  "username": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 50,
+                    "pattern": "^[a-zA-Z0-9]+$",
+                    "example": "ProGamer92"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "player@esports.com"
+                  },
+                  "organization": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 100,
+                    "example": "Team Acme"
+                  },
+                  "wins": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 45
+                  },
+                  "losses": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 15
+                  },
+                  "totalKills": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 450
+                  },
+                  "totalDeaths": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 150
+                  },
+                  "matchesLast30Days": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 30,
+                    "example": 22
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Player created successfully"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - admin or organizer only"
+          },
+          "409": {
+            "description": "Player email already exists"
+          }
+        }
+      },
+      "get": {
+        "summary": "List all players",
+        "tags": ["Players"],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10,
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "includeDeleted",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "organization",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "blacklisted",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of players"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/players/{playerId}": {
+      "get": {
+        "summary": "Get player by ID",
+        "tags": ["Players"],
+        "parameters": [
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Player details"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Player not found"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update player information",
+        "tags": ["Players"],
+        "parameters": [
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 50
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "organization": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 100
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Player updated"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Player not found"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Permanently delete player (HARD DELETE)",
+        "tags": ["Players"],
+        "description": "PERMANENT deletion - completely removes player record. Cannot be undone.",
+        "parameters": [
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Player permanently deleted"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - admin only"
+          },
+          "404": {
+            "description": "Player not found"
+          }
+        }
+      }
+    },
+    "/players/{playerId}/rating": {
+      "get": {
+        "summary": "Get player rating details",
+        "tags": ["Players"],
+        "parameters": [
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Player rating information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerRating"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Player not found"
+          }
+        }
+      }
+    },
+    "/players/{playerId}/stats": {
+      "put": {
+        "summary": "Update player statistics",
+        "tags": ["Players"],
+        "parameters": [
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "wins": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "losses": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "totalKills": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "totalDeaths": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Stats updated and rating recalculated"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - admin or enforcer only"
+          },
+          "404": {
+            "description": "Player not found"
+          }
+        }
+      }
+    },
+    "/players/{playerId}/blacklist": {
+      "post": {
+        "summary": "Blacklist a player",
+        "tags": ["Players"],
+        "parameters": [
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["reason"],
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "minLength": 5,
+                    "maxLength": 500,
+                    "example": "Cheating violation"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Player blacklisted"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Player not found"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Remove blacklist from player",
+        "tags": ["Players"],
+        "parameters": [
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Player unblacklisted"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Player not found"
+          }
+        }
+      }
+    },
+    "/integrity/scan/{playerId}": {
+      "post": {
+        "summary": "Scan player with AI integrity detection",
+        "tags": ["Integrity"],
+        "parameters": [
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Integrity case created with AI analysis",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrityCase"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - admin or enforcer only"
+          },
+          "404": {
+            "description": "Player not found"
+          },
+          "503": {
+            "description": "AI service (Ollama) unavailable"
+          }
+        }
+      }
+    },
+    "/integrity/cases": {
+      "get": {
+        "summary": "List integrity investigation cases",
+        "tags": ["Integrity"],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["open", "investigating", "resolved", "false_positive"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of integrity cases",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/IntegrityCase"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - admin or enforcer only"
+          }
+        }
+      }
+    },
+    "/integrity/cases/{caseId}": {
+      "get": {
+        "summary": "Get integrity case details",
+        "tags": ["Integrity"],
+        "parameters": [
+          {
+            "name": "caseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Case details with AI analysis",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrityCase"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - admin or enforcer only"
+          },
+          "404": {
+            "description": "Case not found"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update integrity case status",
+        "tags": ["Integrity"],
+        "parameters": [
+          {
+            "name": "caseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["open", "investigating", "resolved", "false_positive"]
+                  },
+                  "adminNotes": {
+                    "type": "string"
+                  },
+                  "recommendedAction": {
+                    "type": "string",
+                    "enum": ["warn", "monitor", "temporary_ban", "blacklist", "clear"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Case updated"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - admin or enforcer only"
+          },
+          "404": {
+            "description": "Case not found"
+          },
+          "422": {
+            "description": "Validation error"
+          }
+        }
+      }
+    }
+  }
+}
     "/admin/bootstrap": {
       "post": {
         "summary": "Bootstrap first admin user (one-time only)",
@@ -353,11 +1389,11 @@
         }
       }
     },
-    "/players/{playerId}": {
-      "delete": {
-        "summary": "Soft delete player (admin and enforcer)",
+    "/integrity/scan/{playerId}": {
+      "post": {
+        "summary": "Scan player for integrity violations using AI (admin only)",
         "tags": [
-          "Players"
+          "Integrity"
         ],
         "security": [
           {
@@ -375,46 +1411,14 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "Player deleted successfully (returns deleted id)"
+          "201": {
+            "description": "Player scanned, integrity case created with AI analysis"
           },
           "401": {
             "description": "Unauthorized"
           },
           "403": {
-            "description": "Forbidden"
-          },
-          "404": {
-            "description": "Player not found"
-          }
-        }
-      },
-      "get": {
-        "summary": "Get player by ID (admin, organizer, enforcer, officer)",
-        "tags": [
-          "Players"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "playerId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Player details"
-          },
-          "401": {
-            "description": "Unauthorized"
+            "description": "Forbidden - admin only"
           },
           "404": {
             "description": "Player not found"
@@ -422,11 +1426,11 @@
         }
       }
     },
-    "/players/{playerId}/restore": {
-      "patch": {
-        "summary": "Restore a soft-deleted player (admin and enforcer)",
+    "/integrity/cases": {
+      "get": {
+        "summary": "Get all integrity investigation cases (admin only)",
         "tags": [
-          "Players"
+          "Integrity"
         ],
         "security": [
           {
@@ -435,7 +1439,46 @@
         ],
         "parameters": [
           {
-            "name": "playerId",
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "open",
+                "investigating",
+                "resolved",
+                "false_positive"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of integrity cases"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - admin only"
+          }
+        }
+      }
+    },
+    "/integrity/cases/{caseId}": {
+      "get": {
+        "summary": "Get detailed integrity case information with AI analysis (admin only)",
+        "tags": [
+          "Integrity"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "caseId",
             "in": "path",
             "required": true,
             "schema": {
@@ -445,16 +1488,78 @@
         ],
         "responses": {
           "200": {
-            "description": "Player restored successfully"
+            "description": "Detailed case information with flags and AI analysis"
           },
           "401": {
             "description": "Unauthorized"
           },
           "403": {
-            "description": "Forbidden"
+            "description": "Forbidden - admin only"
           },
           "404": {
-            "description": "Player not found"
+            "description": "Case not found"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update integrity case status and notes (admin only)",
+        "tags": [
+          "Integrity"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "caseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "status"
+                ],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "open",
+                      "investigating",
+                      "resolved",
+                      "false_positive"
+                    ]
+                  },
+                  "adminNotes": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Case updated"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - admin only"
+          },
+          "404": {
+            "description": "Case not found"
           }
         }
       }
@@ -796,6 +1901,99 @@
           },
           "401": {
             "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/players/{playerId}": {
+      "get": {
+        "summary": "Get player by ID (admin, organizer, enforcer, officer)",
+        "tags": [
+          "Players"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Player details"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Player not found"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Permanently delete player (admin only - HARD DELETE)",
+        "tags": [
+          "Players"
+        ],
+        "description": "PERMANENT deletion - completely removes player record from database. Use for major violations or data cleanup only. This action cannot be undone.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "playerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Player permanently deleted from system",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "permanently_deleted": {
+                          "type": "boolean"
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - no authentication token"
+          },
+          "403": {
+            "description": "Forbidden - admin role required"
+          },
+          "404": {
+            "description": "Player not found"
           }
         }
       }

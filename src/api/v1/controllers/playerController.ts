@@ -82,10 +82,9 @@ export const getAllPlayers = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { page = 1, limit = 10, includeDeleted = false } = req.query;
+    const { page = 1, limit = 10 } = req.query;
 
     const result = await playerService.getAllPlayers(
-      includeDeleted === "true",
       Number(page),
       Number(limit)
     );
@@ -152,7 +151,7 @@ export const updatePlayer = async (
 };
 
 /**
- * DELETE /api/v1/players/:id - Soft delete player
+ * DELETE /api/v1/players/:id - Hard delete player (permanent removal)
  */
 export const deletePlayer = async (
   req: Request,
@@ -164,36 +163,13 @@ export const deletePlayer = async (
     const userId = res.locals.uid;
     const ipAddress = res.locals.clientIP;
 
-    await playerService.softDeletePlayer(id as string, userId, ipAddress);
+    await playerService.hardDeletePlayer(id as string, userId, ipAddress);
 
     res.status(HTTP_STATUS.OK).json(
       successResponse(
-        { id, deleted: true },
-        "Player deleted successfully"
+        { id, permanently_deleted: true },
+        "Player permanently deleted from system"
       )
-    );
-  } catch (error: unknown) {
-    next(error);
-  }
-};
-
-/**
- * PATCH /api/v1/players/:id/restore - Restore soft-deleted player
- */
-export const restorePlayer = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    const { id } = req.params;
-    const userId = res.locals.uid;
-    const ipAddress = res.locals.clientIP;
-
-    const player = await playerService.restorePlayer(id as string, userId, ipAddress);
-
-    res.status(HTTP_STATUS.OK).json(
-      successResponse(formatPlayerDetails(player), "Player restored successfully")
     );
   } catch (error: unknown) {
     next(error);
