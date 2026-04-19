@@ -10,18 +10,13 @@ import { Request, Response, NextFunction } from "express";
 import { auth } from "../../../config/firebaseConfig";
 import { successResponse } from "../models/responseModel";
 import { HTTP_STATUS } from "../../../constants/httpConstants";
-import {
-  ServiceError,
-} from "../errors/errors";
+import { ServiceError } from "../errors/errors";
 import * as firestoreRepository from "../repositories/firestoreRepository";
 import * as playerService from "../services/playerService";
 import { logAuditEntry } from "../middleware/auditLogger";
 
 /**
  * Bootstrap first admin user
- * One-time endpoint - can only be called if no admins exist
- * 
- * BRANCH: feature/bootstrap
  */
 export const bootstrapAdmin = async (
   req: Request,
@@ -31,7 +26,7 @@ export const bootstrapAdmin = async (
   try {
     const { email, password } = req.body;
 
-    // Check if any admins already exist
+    // Check if admin already exists
     const adminsSnapshot = await firestoreRepository.queryDocuments(
       "users",
       "role",
@@ -40,62 +35,35 @@ export const bootstrapAdmin = async (
     );
 
     if (!adminsSnapshot.empty) {
-      throw new ServiceError(
-        "Admin already exists. Bootstrap not allowed.",
-        "ADMIN_EXISTS",
-        HTTP_STATUS.CONFLICT
-      );
+      res.status(HTTP_STATUS.CONFLICT).json({
+        error: "Admin already exists"
+      });
+      return;
     }
 
-    // Create user in Firebase Authentication
+    // Create user in Firebase
     const userRecord = await auth.createUser({
       email,
       password,
-      emailVerified: false,
     });
 
-    // Set custom claims to admin role
+    // Set admin role
     await auth.setCustomUserClaims(userRecord.uid, { role: "admin" });
 
-    // Create user document in Firestore
-    const userData = {
+    // Save to Firestore
+    await firestoreRepository.createDocument("users", {
       uid: userRecord.uid,
       email: userRecord.email,
-      role: "admin",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+      role: "admin"
+    }, userRecord.uid);
 
-    await firestoreRepository.createDocument("users", userData, userRecord.uid);
-
-    // Log bootstrap action
-    await logAuditEntry({
-      action: "admin_bootstrapped",
-      userId: userRecord.uid,
-      targetId: userRecord.uid,
-      targetType: "user",
-      changes: { role: "admin" },
-      timestamp: new Date(),
+    res.status(HTTP_STATUS.CREATED).json({
+      uid: userRecord.uid,
+      email: userRecord.email,
+      role: "admin"
     });
-
-    res.status(HTTP_STATUS.CREATED).json(
-      successResponse(
-        {
-          uid: userRecord.uid,
-          email: userRecord.email,
-        },
-        "Admin user created successfully. User must sign in to get token."
-      )
-    );
   } catch (error: unknown) {
-    if (error instanceof ServiceError) {
-      next(error);
-    } else if (error instanceof Error) {
-      // Handle Firebase auth errors
-      next(new ServiceError(error.message, "BOOTSTRAP_ERROR"));
-    } else {
-      next(new ServiceError("Failed to bootstrap admin", "BOOTSTRAP_ERROR"));
-    }
+    next(error);
   }
 };
 

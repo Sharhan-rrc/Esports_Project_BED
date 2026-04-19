@@ -4,6 +4,7 @@
  */
 
 import * as firestoreRepository from "../repositories/firestoreRepository";
+import { FieldValue } from "firebase-admin/firestore";
 import { ServiceError } from "../errors/errors";
 import { HTTP_STATUS } from "../../../constants/httpConstants";
 import {
@@ -51,26 +52,51 @@ export const createPlayer = async (
     }
 
     const now = new Date();
+    
+    // Extract stats from request (if provided)
+    const wins = data.wins || 0;
+    const losses = data.losses || 0;
+    const totalKills = data.totalKills || 0;
+    const totalDeaths = data.totalDeaths || 0;
+    const matchesLast30Days = data.matchesLast30Days || 0;
+    const totalMatches = wins + losses;
+    
+    // Calculate rating if any stats provided
+    const ratingComponents = calculatePlayerRating(
+      totalMatches,
+      wins,
+      totalKills,
+      totalDeaths,
+      matchesLast30Days,
+      0, // blacklistCount
+      0, // reportedCount
+      0  // suspiciousFlags
+    );
+    
     const playerData = {
-      ...data,
+      username: data.username,
+      email: data.email,
+      organization: data.organization,
       rating: {
         playerId: "", // Will be set after creation
-        totalMatches: 0,
-        wins: 0,
-        losses: 0,
-        totalKills: 0,
-        totalDeaths: 0,
-        winRate: 0,
-        kdRatio: 0,
-        consistency: 0,
-        overallRating: 0,
-        matchesLast30Days: 0,
+        totalMatches,
+        wins,
+        losses,
+        totalKills,
+        totalDeaths,
+        winRate: ratingComponents.winRate,
+        kdRatio: ratingComponents.kdRatio,
+        consistency: ratingComponents.consistency,
+        integrityScore: ratingComponents.integrityScore,
+        overallRating: ratingComponents.overallRating,
+        riskLevel: ratingComponents.riskLevel,
+        matchesLast30Days: matchesLast30Days,
         lastUpdated: now,
       },
       blacklisted: false,
+      integrityFlags: 0,
       createdAt: now,
       updatedAt: now,
-      isDeleted: false,
     };
 
     const playerId = await firestoreRepository.createDocument(
@@ -107,11 +133,10 @@ export const createPlayer = async (
 };
 
 /**
- * Get all players (excluding deleted unless specified)
+ * Get all players
  * BRANCH: feature/players-crud
  */
 export const getAllPlayers = async (
-  includeDeleted: boolean = false,
   page: number = 1,
   limit: number = 10
 ): Promise<{ players: Player[]; total: number }> => {
@@ -121,7 +146,6 @@ export const getAllPlayers = async (
 
     snapshot.forEach((doc) => {
       const data = doc.data();
-      if (!includeDeleted && data.isDeleted) return;
       players.push({
         id: doc.id,
         ...data,
@@ -154,7 +178,7 @@ export const getPlayerById = async (playerId: string): Promise<Player> => {
       playerId
     );
 
-    if (!doc || doc.data()?.isDeleted) {
+    if (!doc || !doc.exists) {
       throw new ServiceError(
         "Player not found",
         "PLAYER_NOT_FOUND",
@@ -236,10 +260,14 @@ export const updatePlayer = async (
 };
 
 /**
- * Soft delete player (set isDeleted = true)
- * BRANCH: feature/players-crud
+ * Hard delete player - Permanently removes player record from database
+ * Admin only - used for major violations or data cleanup
+ * 
+ * @param playerId - Player ID to delete
+ * @param userId - Admin UUID performing deletion
+ * @param ipAddress - Client IP for audit log
  */
-export const softDeletePlayer = async (
+export const hardDeletePlayer = async (
   playerId: string,
   userId: string,
   ipAddress?: string
@@ -247,19 +275,15 @@ export const softDeletePlayer = async (
   try {
     await getPlayerById(playerId); // Verify player exists
 
-    await firestoreRepository.updateDocument(PLAYERS_COLLECTION, playerId, {
-      isDeleted: true,
-      deletedAt: new Date(),
-      updatedAt: new Date(),
-    });
+    await firestoreRepository.deleteDocument(PLAYERS_COLLECTION, playerId);
 
     // Log audit entry
     await logAuditEntry(
       createPlayerAuditLog(
-        "player_deleted",
+        "player_hard_deleted",
         playerId,
         userId,
-        { action: "soft deleted player" },
+        { action: "permanently deleted player" },
         ipAddress
       )
     );
@@ -348,9 +372,9 @@ export const unblacklistPlayer = async (
 
     const unblacklistData = {
       blacklisted: false,
-      blacklistReason: undefined,
-      blacklistBy: undefined,
-      blacklistAt: undefined,
+      blacklistReason: FieldValue.delete(),
+      blacklistBy: FieldValue.delete(),
+      blacklistAt: FieldValue.delete(),
       updatedAt: new Date(),
     };
 

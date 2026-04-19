@@ -18,38 +18,6 @@ const officerRoles: AuthorizationOptions["hasRole"] = ["admin", "enforcer", "org
 
 /**
  * @openapi
- * /players/{playerId}:
- *   delete:
- *     summary: Delete player (soft delete - admin and enforcer)
- *     tags: [Players]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - name: playerId
- *         in: path
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       204:
- *         description: Player deleted
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden
- *       404:
- *         description: Player not found
- */
-router.delete(
-  "/:id",
-  authenticate,
-  isAuthorized({ hasRole: enforcerRoles }),
-  validateRequest(playerSchemas.delete),
-  playerController.deletePlayer
-);
-
-/**
- * @openapi
  * /players/{playerId}/blacklist:
  *   post:
  *     summary: Blacklist a player (admin and enforcer)
@@ -178,7 +146,7 @@ router.put(
  * @openapi
  * /players:
  *   post:
- *     summary: Create a new player (admin, organizer)
+ *     summary: Create a new player with optional initial stats (admin, organizer)
  *     tags: [Players]
  *     security:
  *       - bearerAuth: []
@@ -203,9 +171,30 @@ router.put(
  *               organization:
  *                 type: string
  *                 example: "team_456def"
+ *               wins:
+ *                 type: integer
+ *                 minimum: 0
+ *                 example: 45
+ *               losses:
+ *                 type: integer
+ *                 minimum: 0
+ *                 example: 15
+ *               totalKills:
+ *                 type: integer
+ *                 minimum: 0
+ *                 example: 450
+ *               totalDeaths:
+ *                 type: integer
+ *                 minimum: 0
+ *                 example: 150
+ *               matchesLast30Days:
+ *                 type: integer
+ *                 minimum: 0
+ *                 maximum: 30
+ *                 example: 22
  *     responses:
  *       201:
- *         description: Player created successfully
+ *         description: Player created successfully with calculated rating
  *       400:
  *         description: Invalid input
  *       401:
@@ -289,6 +278,7 @@ router.put(
  *           maximum: 100
  *       - name: includeDeleted
  *         in: query
+ *         description: Include soft-deleted players in list results
  *         schema:
  *           type: boolean
  *           default: false
@@ -364,6 +354,53 @@ router.get(
   isAuthorized({ hasRole: officerRoles }),
   validateRequest(playerSchemas.getById),
   playerController.getPlayerRating
+);
+
+/**
+ * @openapi
+ * /players/{playerId}:
+ *   delete:
+ *     summary: Permanently delete player (admin only - HARD DELETE)
+ *     tags: [Players]
+ *     description: PERMANENT deletion - completely removes player record from database. Use for major violations or data cleanup only. This action cannot be undone.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: playerId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Player permanently deleted from system
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     permanently_deleted:
+ *                       type: boolean
+ *                 message:
+ *                   type: string
+ *       401:
+ *         description: Unauthorized - no authentication token
+ *       403:
+ *         description: Forbidden - admin role required
+ *       404:
+ *         description: Player not found
+ */
+router.delete(
+  "/:id",
+  authenticate,
+  isAuthorized({ hasRole: ["admin"] }),
+  validateRequest(playerSchemas.delete),
+  playerController.deletePlayer
 );
 
 export default router;
